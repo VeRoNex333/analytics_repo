@@ -1,0 +1,16 @@
+version: 2
+
+sources:
+  - name: dbt_vtyagi
+    database: analytics-425711
+    schema: dbt_vtyagi
+    tables:
+      - name: billing_header
+      - name: billing_detail
+      - name: emp_master
+      - name: case_bill_detail
+      - name: billing_master
+      - name: patient_master
+      - name: referral_party_master
+      - name: patient_type_detail
+      - name: patient_type_master

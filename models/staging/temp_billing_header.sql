@@ -1,3 +1,11 @@
+{{
+    config(
+        materialized= 'table'
+    )
+}}
+
+
+
 select
     billing_header.tran_id as tran_id,
     billing_detail.sr_id as sr_id,
@@ -33,10 +41,9 @@ select
     row_number() over (partition by billing_header.tran_id order by billing_detail.sr_id) as rowid,
     row_number() over (partition by billing_header.ref_id order by billing_header.tran_id,billing_detail.sr_id) as ref_rowid,
     row_number() over (partition by billing_header.patient_id order by billing_header.tran_id,billing_detail.sr_id) as patient_rowid
-from dbt_vtyagi.billing_header
-join dbt_vtyagi.billing_detail on billing_detail.tran_id = billing_header.tran_id
-left join dbt_vtyagi.emp_master on billing_header.createdby_id = emp_master.empid 
-left join dbt_vtyagi.emp_master as detail_emp_master on billing_detail.createdby_id = detail_emp_master.empid
-left join dbt_vtyagi.case_bill_detail on case_bill_detail.tran_id = billing_detail.tran_id 
-     and case_bill_detail.sr_id = billing_detail.sr_id 
-join dbt_vtyagi.billing_master on billing_detail.billing_id = billing_master.billing_id
+from {{ source('dbt_vtyagi', 'billing_header') }}
+join {{ source('dbt_vtyagi', 'billing_detail') }} on billing_detail.tran_id = billing_header.tran_id
+left join {{ source("dbt_vtyagi", "emp_master") }} on billing_header.createdby_id = emp_master.empid 
+left join {{ source("dbt_vtyagi", "emp_master") }} as detail_emp_master on billing_detail.createdby_id = detail_emp_master.empid
+left join {{ source("dbt_vtyagi", "case_bill_detail") }} on case_bill_detail.tran_id = billing_detail.tran_id and case_bill_detail.sr_id = billing_detail.sr_id 
+join {{ source("dbt_vtyagi", "billing_master") }} on billing_detail.billing_id = billing_master.billing_id

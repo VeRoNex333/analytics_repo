@@ -1,5 +1,5 @@
 select * from {{ ref("Charges") }}
 
-union
+union all
 
 select * from {{ ref("payment") }}

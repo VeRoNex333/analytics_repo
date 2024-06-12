@@ -68,7 +68,7 @@ SELECT
     Bill_no,
     temp_billing_header.service_date AS actual_date,
     'C' AS row_type,
-    temp_billing_header.office_id AS office_id,
+    cast(temp_billing_header.office_id as string) AS office_id,
     office_master.office_code AS office_code,
     office_master.name AS office,
     temp_billing_header.doctor_id AS doctor_id,
@@ -152,6 +152,7 @@ SELECT
     --         0 
     -- END
     -- ) AS adjustment_plus,
+    0 as adjustment_plus,
     -- sum(case 
     --         when coalesce(temp_billing_header.ins_min_line_id, 0) <> 0 then (
     --             case 
@@ -162,22 +163,24 @@ SELECT
     --             end 
     --     end
     -- ) as allowed_amount--,
-    0 AS gross_revenue,
+    0 as allowed_amount,
+    cast(0 as float64) AS gross_revenue,
     write_offs.pat_write_off,
     write_offs.Ins_write_off,
     write_offs.pat_write_off + write_offs.Ins_write_off AS total_write_off,
-    0 AS refund,
+    cast(0 as float64) AS refund,
     SUM(
         CASE 
             WHEN billing_subdetail.line_id = -1 THEN temp_billing_header.pat_open_credit 
             ELSE 0.00 
         END
     ) AS open_credit,
-    0 AS over_paid,
-    0 AS RMP,
-    0 AS adjustment_negative,
+    cast(0 as float64) AS over_paid,
+    cast(0 as float64) AS RMP,
+    cast(0 as float64) AS adjustment_negative,
     balances.pat_balance_due AS pat_balance_due,
     balances.ins_balance_due AS ins_balance_due,
+    balances.pat_balance_due + balances.ins_balance_due as total_balance_due,
     CASE 
         WHEN DATE_DIFF(CAST(temp_billing_header.service_date AS DATE), CURRENT_DATE(), DAY) <= 30 THEN balances.pat_balance_due + balances.ins_balance_due 
         ELSE 0 
@@ -209,27 +212,10 @@ SELECT
         END
     ) AS ins_net_revenue
     --pat_net_revenue + ins_net_revenue AS total_net_revenue
+
 FROM 
     {{ ref("temp_billing_header") }}
-JOIN (
-    SELECT 
-        patient_master.id AS patient_id,
-        patient_master.patient_no AS patient_no,
-        CONCAT(patient_master.lastname, ' ', patient_master.firstname) AS patient,
-        patient_type_master.patient_type AS patient_type,
-        patient_type_master.description AS patient_type_description,
-        referral_party_master.srno AS ref_party_id,
-        referral_party_master.name AS referral_source,
-        ROW_NUMBER() OVER (PARTITION BY patient_master.id ORDER BY patient_type_detail.srno) AS rowid
-    FROM 
-        dbt_vtyagi.patient_master 
-    LEFT JOIN 
-        dbt_vtyagi.referral_party_master ON patient_master.referral_party_id = referral_party_master.srno
-    LEFT JOIN 
-        dbt_vtyagi.patient_type_detail ON patient_type_detail.patient_id = patient_master.id
-    LEFT JOIN 
-        dbt_vtyagi.patient_type_master ON patient_type_detail.patient_type = patient_type_master.patient_type
-) AS patient_master ON temp_billing_header.patient_id = patient_master.patient_id AND patient_master.rowid = 1
+JOIN {{ ref("patient_master_updated") }}  as patient_master ON temp_billing_header.patient_id = patient_master.patient_id AND patient_master.rowid = 1
 LEFT JOIN (
     SELECT 
         CASE billing_subdetail.ins_category 
@@ -272,9 +258,9 @@ LEFT JOIN
     dbt_vtyagi.insurance_plan_master ON billing_subdetail.insurance_id = insurance_plan_master.srno 
 LEFT JOIN 
     dbt_vtyagi.insurance_carrier_master ON insurance_plan_master.carrier_id = insurance_carrier_master.srno
-JOIN 
+LEFT JOIN 
     write_offs ON 1=1
-JOIN 
+LEFT JOIN 
     balances ON 1=1
 GROUP BY 
     Bill_NO,row_type,service_date,office_id,office_code,office,doctor_id,provider,carrier_id,insurance_carrier,plan_id,insurance_plan,total_write_off,pat_write_off,Ins_write_off,pat_balance_due,
