@@ -217,17 +217,12 @@ FROM
     {{ ref("temp_billing_header") }}
 JOIN {{ ref("patient_master_updated") }}  as patient_master ON temp_billing_header.patient_id = patient_master.patient_id AND patient_master.rowid = 1
 LEFT JOIN (
-    SELECT 
-        CASE billing_subdetail.ins_category 
-            WHEN 'I' THEN 'CI' 
-            WHEN 'P' THEN 'PI' 
-            ELSE 'P' 
-        END AS resp_party_type,
-        ROW_NUMBER() OVER (PARTITION BY tran_id,sr_id ORDER BY (CASE WHEN line_id = -1 THEN 999 ELSE line_id END)) AS line_rowid,
-        * 
-    FROM 
-        dbt_vtyagi.billing_subdetail
-) AS billing_subdetail ON temp_billing_header.tran_id = billing_subdetail.tran_id AND temp_billing_header.sr_id = billing_subdetail.sr_id
+        SELECT 
+            CASE billing_subdetail.ins_category WHEN 'I' THEN 'CI' WHEN 'P' THEN 'PI' ELSE 'P' END AS resp_party_type,
+            ROW_NUMBER() OVER (PARTITION BY tran_id,sr_id ORDER BY (CASE WHEN line_id = -1 THEN 999 ELSE line_id END)) AS line_rowid,* 
+        FROM 
+            {{ source("dbt_vtyagi", "billing_subdetail") }}
+        ) AS billing_subdetail ON temp_billing_header.tran_id = billing_subdetail.tran_id AND temp_billing_header.sr_id = billing_subdetail.sr_id
 LEFT JOIN (
     SELECT 
         srv_tran_id, srv_sr_id, line_id,

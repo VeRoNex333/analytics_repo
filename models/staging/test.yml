@@ -1,0 +1,23 @@
+version: 2
+
+models:
+  - name: patient_master_updated
+    description: This model has patients demographics informations
+    columns:
+      - name: patient_id
+        description: Patient's Primary Key
+        tests: 
+          - unique
+          - not_null
+      - name: patient_no
+        tests:
+          - unique
+          - not_null
+
+  - name: temp_billing_header
+    description: This model has detailed information about the posted charges
+    columns:
+      - name: tran_id
+        description: Unique key for each bill
+        tests:
+          - not_null

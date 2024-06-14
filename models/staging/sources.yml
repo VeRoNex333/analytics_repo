@@ -6,11 +6,25 @@ sources:
     schema: dbt_vtyagi
     tables:
       - name: billing_header
+        columns:
+          - name: tran_id
+            tests:
+              - unique
+              - not_null
       - name: billing_detail
       - name: emp_master
+        columns:
+          - name: empid
+            tests:
+              - unique
+              - not_null
       - name: case_bill_detail
       - name: billing_master
       - name: patient_master
       - name: referral_party_master
       - name: patient_type_detail
       - name: patient_type_master
+      - name: billing_subdetail
+        columns:
+          - name: status
+            description: "{{ doc('status') }}"
