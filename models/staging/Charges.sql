@@ -141,28 +141,7 @@ SELECT
                 END 
         END
     ) AS Charges,
-    -- SUM(
-    -- CASE 
-    --     WHEN temp_billing_header.adjustment_bill = 'Y' THEN 
-    --         CASE 
-    --             WHEN CASTbilling_subdetail.line_id = COALESCE(CAST(temp_billing_header.min_line_id AS STRING), '-2') THEN temp_billing_header.total_billing_amount 
-    --             ELSE 0.00 
-    --         END
-    --     ELSE 
-    --         0 
-    -- END
-    -- ) AS adjustment_plus,
     0 as adjustment_plus,
-    -- sum(case 
-    --         when coalesce(temp_billing_header.ins_min_line_id, 0) <> 0 then (
-    --             case 
-    --                 when temp_billing_header.ins_min_line_id = billing_subdetail.line_id then temp_billing_header.allowed_amt end
-    --         )
-    --         else case 
-    --                 when temp_billing_header.min_line_id = billing_subdetail.line_id then temp_billing_header.allowed_amt else 0.00 
-    --             end 
-    --     end
-    -- ) as allowed_amount--,
     0 as allowed_amount,
     cast(0 as float64) AS gross_revenue,
     write_offs.pat_write_off,
